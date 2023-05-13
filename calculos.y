@@ -4,7 +4,7 @@
 %token	<s> BSLEFT BSRIGHT
 %token	<s> INCREMENTO DECREMENTO
 %token	<s> CASTINT
-%token 	<s>	VARIAVEL
+%token	<s>	VARIAVEL
 
 %type	<i> int var_id
 %type	<d>	expr real var
