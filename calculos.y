@@ -6,22 +6,25 @@
 %token	<s> CASTINT
 %token	<s>	VARIAVEL
 
-%type	<i> int var_id
-%type	<d>	expr real var
+%type	<i> var_id inicio
+%type	<n> expr
 
 %{
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
 
-typedef struct var {
+struct var {
 	int id;
 	int type;
 	char name[20];
-	double value;
-} NUMBER;
+	union {
+		int i;
+		double d;
+	};
+};
 
-NUMBER regvar[128];
+struct var regvar[128];
 int count = 0;
 %}
 
@@ -29,6 +32,7 @@ int count = 0;
 	int i;
 	double d;
 	char *s;
+	struct var n;
 }
 
 %right	'='
@@ -44,41 +48,53 @@ int count = 0;
 
 %%
 
-expr:	
+inicio:	
 				{ $$ = 0; }
-		|	expr int '\n'
-				{ $$ = 0; printf("Resultado: %d\n", $2); }
-		|	expr real '\n'
-				{ $$ = 0; printf("Resultado: %f\n", $2); }
-		|	expr CASTINT real '\n'
-				{ $$ = 0; printf("Resultado: %d\n", (int) $3); }
-		| 	expr VARIAVEL '=' int '\n'
+		|	inicio expr '\n'
 				{ $$ = 0;
-					strcpy(regvar[count].name, $2);
-					regvar[count].value = $4;
-					regvar[count].type = 0;
-					regvar[count].id = count;
-					printf("\t%d\n", (int) regvar[count].value);
-					count++;
+				  if($2.type == 0) {
+					printf("Resultado: %d\n", $2.i);
+				  }
+				  else {
+					printf("Resultado: %f\n", $2.d);
+				  }
 				}
-		|	expr VARIAVEL '=' real '\n'
+		|	inicio CASTINT expr '\n'
 				{ $$ = 0;
-					strcpy(regvar[count].name, $2);
-					regvar[count].value = $4;
-					regvar[count].type = 1;
-					regvar[count].id = count;
-					printf("\t%f\n", regvar[count].value);
-					count++;
+				  if($3.type == 0) {
+					printf("Resultado: %d\n", $3.i);
+				  }
+				  else {
+					printf("Resultado: %d\n", (int) $3.d);
+				  }
 				}
-		|	expr VARIAVEL '\n'
+		| 	inicio VARIAVEL '=' INTEIRO '\n'
+				{ $$ = 0;
+				  strcpy(regvar[count].name, $2);
+				  regvar[count].i = $4;
+				  regvar[count].type = 0;
+				  regvar[count].id = count;
+				  printf("\t%d\n", regvar[count].i);
+				  count++;
+				}
+		|	inicio VARIAVEL '=' REAL '\n'
+				{ $$ = 0;
+				  strcpy(regvar[count].name, $2);
+				  regvar[count].d = $4;
+				  regvar[count].type = 1;
+				  regvar[count].id = count;
+				  printf("\t%f\n", regvar[count].d);
+				  count++;
+				}
+		|	inicio VARIAVEL '\n'
 				{ for(int i = 0; i < count; i++) {
 					if(strcmp(regvar[i].name, $2) == 0) {
 						printf("Name: %s\n", regvar[i].name);
 						if(regvar[i].type == 0) {
-							printf("%d\n", (int) regvar[i].value);
+							printf("%d\n", regvar[i].i);
 						}
 						else {
-							printf("%f\n", regvar[i].value);
+							printf("%f\n", regvar[i].d);
 						}
 						break;
 					}
@@ -92,90 +108,45 @@ var_id:		VARIAVEL
 					$$ = regvar[i].id;
 					break;
 				}
+				else {
+					yyerror("A variável non ecziste!");
+				}
 			  }
 			}
 		;
-
-var:		var_id
-				{ $$ = regvar[$1].value; }
-		;
-
-int:		int '|' int
-				{ $$ = $1 | $3; }
-		|	int '^' int
-				{ $$ = $1 ^ $3; }
-		|	int '&' int
-				{ $$ = $1 & $3; }
-		|	int BSLEFT int
-				{ $$ = $1 << $3; }
-		|	int BSRIGHT int
-				{ $$ = $1 >> $3; }
-		|	'~' int
-				{ $$ = ~$2; }
-		|	int '+' int
-				{ $$ = $1 + $3; }
-		|	int '-' int
-				{ $$ = $1 - $3; }
-		|	int '*' int
-				{ $$ = $1 * $3; }
-		|	int '/' int
-				{ $$ = $1 / $3; }
-		|	int '%' int
-				{ $$ = $1 % $3; }
-		|	'-' int %prec '~'
-				{ $$ = -$2; }
-		|	int INCREMENTO
-				{ $$ = $1 + 1; }
-		|	int DECREMENTO
-				{ $$ = $1 - 1; }
-		|	int POTENCIA int
-				{ $$ = pow($1, $3); }
-		|	'(' int ')'
-				{ $$ = ($2); }
+		
+expr:		expr '+' expr
+				{ if($1.type == 0 && $3.type == 0) {
+					$$.type = 0;
+					$$.i = $1.i + $3.i;
+				  }
+				  else if($1.type == 0 && $3.type == 1) {
+					$$.type = 1;
+					$$.d = $1.i + $3.d;
+				  }
+				  else if($1.type == 1 && $3.type == 0) {
+					$$.type = 1;
+					$$.d = $1.d + $3.i;
+				  }
+				  else {
+					$$.type = 1;
+					$$.d = $1.d + $3.d;
+				  }
+				}
 		|	INTEIRO
-				{ $$ = $1; }
-		|	var
-				{ $$ = (int) $1; }
-		;
-
-real:		real '+' real
-				{ $$ = $1 + $3; }
-		|	real '-' real
-				{ $$ = $1 - $3; }
-		|	real '*' real
-				{ $$ = $1 * $3; }
-		|	real '/' real
-				{ $$ = $1 / $3; }
-		|	real POTENCIA real
-				{ $$ = pow($1, $3); }
-		|	real '+' int
-				{ $$ = $1 + $3; }
-		|	real '-' int
-				{ $$ = $1 - $3; }
-		|	real '*' int
-				{ $$ = $1 * $3; }
-		|	real '/' int
-				{ $$ = $1 / $3; }
-		|	real POTENCIA int
-				{ $$ = pow($1, $3); }
-		|	int '+' real
-				{ $$ = $1 + $3; }
-		|	int '-' real
-				{ $$ = $1 - $3; }
-		|	int '*' real
-				{ $$ = $1 * $3; }
-		|	int '/' real
-				{ $$ = $1 / $3; }
-		|	int POTENCIA real
-				{ $$ = pow($1, $3); }
-		|	'-' real %prec '~'
-				{ $$ = -$2; }
-		|	'(' real ')'
-				{ $$ = ($2); }
+				{ $$.i = $1; $$.type = 0; }
 		|	REAL
-				{ $$ = $1; }
-		|	var
-				{ $$ = $1; }
+				{ $$.d = $1; $$.type = 1; }
+		|	var_id
+				{ if(regvar[$1].type == 0) {
+					$$.i = regvar[$1].i;
+					$$.type = 0;
+				  }
+				  else {
+					$$.d = regvar[$1].d;
+					$$.type = 1;
+				  }
+				}
 		;
 
 %%
