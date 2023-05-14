@@ -10,6 +10,13 @@
 #define DECREMENTO 263
 #define CASTINT 264
 #define VARIAVEL 265
+#define CLEAR 266
+#define CLEARINT 267
+#define CLEARREAL 268
+#define LIST 269
+#define LISTINT 270
+#define LISTREAL 271
+#define UMINUS 272
 #ifdef YYSTYPE
 #undef  YYSTYPE_IS_DECLARED
 #define YYSTYPE_IS_DECLARED 1
