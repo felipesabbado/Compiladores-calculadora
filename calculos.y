@@ -23,6 +23,7 @@ typedef struct var {
 
 NUMBER regvar[128];
 int count = 0;
+int flag
 %}
 
 %union {
