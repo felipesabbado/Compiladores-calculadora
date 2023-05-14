@@ -1,27 +1,20 @@
-%token	<i>	INTEIRO
-%token	<d>	REAL
-%token	<s> POTENCIA
-%token	<s> BSLEFT BSRIGHT
-%token	<s> INCREMENTO DECREMENTO
-%token	<s> CASTINT
-%token	<s>	VARIAVEL
-
-%type	<i> int var_id
-%type	<d>	expr real var
-
 %{
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
 
-typedef struct var {
-	int id;
-	int type;
-	char name[20];
-	double value;
-} NUMBER;
+struct var {
+		int type;
+		char name[20];
+		union {
+			int i;
+			double d;
+		};
+	};
 
-NUMBER regvar[128];
+struct var expr[256];
+int count_expr = 0;
+struct var regvar[128];
 int count = 0;
 %}
 
@@ -31,151 +24,442 @@ int count = 0;
 	char *s;
 }
 
-%right	'='
-%left	'|'
+%token	<i>	INTEIRO
+%token	<d>	REAL
+%token	<s> POTENCIA
+%token	<s> BSLEFT BSRIGHT
+%token	<s> INCREMENTO DECREMENTO
+%token	<s> CASTINT
+%token	<s>	VARIAVEL
+%token	<s>	CLEAR CLEARINT CLEARREAL LIST LISTINT LISTREAL
+
+%type	<i> var_id inicio expr
+
+%right	'=' 
+%left	'|' 
 %left	'^'
-%left	'&'
+%left	'&' 
 %left	BSLEFT BSRIGHT
 %left	'+' '-'
 %left	'*' '/' '%'
-%right	'~'
+%right	'~' UMINUS
 %left	INCREMENTO DECREMENTO
 %right	POTENCIA
 
 %%
 
-expr:	
+inicio:	
 				{ $$ = 0; }
-		|	expr int '\n'
-				{ $$ = 0; printf("Resultado: %d\n", $2); }
-		|	expr real '\n'
-				{ $$ = 0; printf("Resultado: %f\n", $2); }
-		|	expr CASTINT real '\n'
-				{ $$ = 0; printf("Resultado: %d\n", (int) $3); }
-		| 	expr VARIAVEL '=' int '\n'
+		|	inicio expr '\n'
 				{ $$ = 0;
+				  if(expr[$2].type == 0) {
+					printf("Resultado: %d\n", expr[$2].i);
+				  }
+				  else {
+					printf("Resultado: %f\n", expr[$2].d);
+				  }
+				}
+		|	inicio CASTINT expr '\n'
+				{ $$ = 0;
+				  if(expr[$3].type == 0) {
+					printf("Resultado: %d\n", expr[$3].i);
+				  }
+				  else {
+					printf("Resultado: %d\n", (int) expr[$3].d);
+				  }
+				}
+		|	inicio VARIAVEL '=' expr '\n'
+				{ $$ = 0;
+				  if(expr[$4].type == 0) {
 					strcpy(regvar[count].name, $2);
-					regvar[count].value = $4;
+					regvar[count].i = expr[$4].i;
 					regvar[count].type = 0;
-					regvar[count].id = count;
-					printf("\t%d\n", (int) regvar[count].value);
-					count++;
-				}
-		|	expr VARIAVEL '=' real '\n'
-				{ $$ = 0;
+					printf("\t%d\n", regvar[count].i);
+				  }
+				  else {
 					strcpy(regvar[count].name, $2);
-					regvar[count].value = $4;
+					regvar[count].d = expr[$4].d;
 					regvar[count].type = 1;
-					regvar[count].id = count;
-					printf("\t%f\n", regvar[count].value);
-					count++;
+					printf("\t%f\n", regvar[count].d);
+				  }
+				  count++;
 				}
-		|	expr VARIAVEL '\n'
+		|	inicio VARIAVEL '\n'
 				{ for(int i = 0; i < count; i++) {
 					if(strcmp(regvar[i].name, $2) == 0) {
-						printf("Name: %s\n", regvar[i].name);
+						printf("id %d - Nome: %s | ", i, regvar[i].name);
 						if(regvar[i].type == 0) {
-							printf("%d\n", (int) regvar[i].value);
+							printf("Tipo: INT | Valor: %d\n", regvar[i].i);
 						}
 						else {
-							printf("%f\n", regvar[i].value);
+							printf("Tipo: REAL | Valor: %f\n", regvar[i].d);
 						}
 						break;
 					}
 				  }
 				}
-		;
+		|	inicio INCREMENTO VARIAVEL '\n'
+				{ for(int i = 0; i < count; i++) {
+					if(strcmp(regvar[i].name, $3) == 0) {
+						if(regvar[i].type == 0) {
+							regvar[i].i++;
+							printf("%d\n", regvar[i].i);
+						}
+						else {
+							regvar[i].d++;
+							printf("%f\n", regvar[i].d);
+						}
+						break;
+					}
+				  }
+				}
+		|	inicio DECREMENTO VARIAVEL '\n'
+				{ for(int i = 0; i < count; i++) {
+					if(strcmp(regvar[i].name, $3) == 0) {
+						if(regvar[i].type == 0) {
+							regvar[i].i--;
+							printf("%d\n", regvar[i].i);
+						}
+						else {
+							regvar[i].d--;
+							printf("%f\n", regvar[i].d);
+						}
+						break;
+					}
+				  }
+				}
+		|	inicio CLEAR '\n'
+				{ $$ = 0; count = 0; }
+		|	inicio CLEAR INTEIRO '\n'
+				{ $$ = 0; count--;
+				  memmove(&regvar[$3], &regvar[$3 + 1], (count - $3) * sizeof(struct var));
+				}
+		|	inicio CLEARINT '\n'
+				{ $$ = 0;
+				  for(int i = 0; i < count; i++) {
+					if(regvar[i].type == 0) {
+						count--;
+						memmove(&regvar[i], &regvar[i + 1], (count - i) * sizeof(struct var));
+						i--;
+					}
+				  }
+				}
+		|	inicio CLEARREAL '\n'
+				{ $$ = 0;
+				  for(int i = 0; i < count; i++) {
+					if(regvar[i].type == 1) {
+						count--;
+						memmove(&regvar[i], &regvar[i + 1], (count - i) * sizeof(struct var));
+						i--;
+					}
+				  }
+				}
+		|	inicio LIST '\n'
+				{ $$ = 0;
+				  for(int i = 0; i < count; i++) {
+					printf("id %d - Nome: %s | ", i, regvar[i].name);
+					if(regvar[i].type == 0) {
+						printf("Tipo: INT | Valor: %d\n", regvar[i].i);
+					}
+					else {
+						printf("Tipo: REAL | Valor: %f\n", regvar[i].d);
+					}
+				  }
+				}
+		|	inicio LIST INTEIRO '\n'
+				{ $$ = 0;
+				  printf("id %d - Nome: %s | ", $3, regvar[$3].name);
+					if(regvar[$3].type == 0) {
+						printf("Tipo: INT | Valor: %d\n", regvar[$3].i);
+					}
+					else {
+						printf("Tipo: REAL | Valor: %f\n", regvar[$3].d);
+					}
+				}
+		|	inicio LISTINT '\n'
+				{ $$ = 0;
+				  for(int i = 0; i < count; i++) {
+					if(regvar[i].type == 0) {
+						printf("id %d - Nome: %s=%d\n", i, regvar[i].name, regvar[i].i);
+					}
+				  }
+				}
+		|	inicio LISTREAL '\n'
+				{ $$ = 0;
+				  for(int i = 0; i < count; i++) {
+					if(regvar[i].type == 1) {
+						printf("id %d - Nome: %s=%f\n", i, regvar[i].name, regvar[i].d);
+					}
+				  }
+				}
+		;			
 		
 var_id:		VARIAVEL
 			{ for(int i = 0; i < count; i++) {
 				if(strcmp(regvar[i].name, $1) == 0) {
-					$$ = regvar[i].id;
+					$$ = i;
 					break;
 				}
 			  }
 			}
 		;
-
-var:		var_id
-				{ $$ = regvar[$1].value; }
-		;
-
-int:		int '|' int
-				{ $$ = $1 | $3; }
-		|	int '^' int
-				{ $$ = $1 ^ $3; }
-		|	int '&' int
-				{ $$ = $1 & $3; }
-		|	int BSLEFT int
-				{ $$ = $1 << $3; }
-		|	int BSRIGHT int
-				{ $$ = $1 >> $3; }
-		|	'~' int
-				{ $$ = ~$2; }
-		|	int '+' int
-				{ $$ = $1 + $3; }
-		|	int '-' int
-				{ $$ = $1 - $3; }
-		|	int '*' int
-				{ $$ = $1 * $3; }
-		|	int '/' int
-				{ $$ = $1 / $3; }
-		|	int '%' int
-				{ $$ = $1 % $3; }
-		|	'-' int %prec '~'
-				{ $$ = -$2; }
-		|	int INCREMENTO
-				{ $$ = $1 + 1; }
-		|	int DECREMENTO
-				{ $$ = $1 - 1; }
-		|	int POTENCIA int
-				{ $$ = pow($1, $3); }
-		|	'(' int ')'
+		
+expr:		expr '+' expr
+				{ if(expr[$1].type == 0 && expr[$3].type == 0) {
+					$$ = count_expr;
+					expr[count_expr].i = expr[$1].i + expr[$3].i;
+					expr[count_expr].type = 0;
+					count_expr++;
+				  }
+				  else if(expr[$1].type == 0 && expr[$3].type == 1) {
+					$$ = count_expr;
+					expr[count_expr].d = expr[$1].i + expr[$3].d;
+					expr[count_expr].type = 1;
+					count_expr++;
+				  }
+				  else if(expr[$1].type == 1 && expr[$3].type == 0) {
+					$$ = count_expr;
+					expr[count_expr].d = expr[$1].d + expr[$3].i;
+					expr[count_expr].type = 1;
+					count_expr++;
+				  }
+				  else {
+					$$ = count_expr;
+					expr[count_expr].d = expr[$1].d + expr[$3].d;
+					expr[count_expr].type = 1;
+					count_expr++;
+				  }
+				}
+		|	expr '-' expr
+				{ if(expr[$1].type == 0 && expr[$3].type == 0) {
+					$$ = count_expr;
+					expr[count_expr].i = expr[$1].i - expr[$3].i;
+					expr[count_expr].type = 0;
+					count_expr++;
+				  }
+				  else if(expr[$1].type == 0 && expr[$3].type == 1) {
+					$$ = count_expr;
+					expr[count_expr].d = expr[$1].i - expr[$3].d;
+					expr[count_expr].type = 1;
+					count_expr++;
+				  }
+				  else if(expr[$1].type == 1 && expr[$3].type == 0) {
+					$$ = count_expr;
+					expr[count_expr].d = expr[$1].d - expr[$3].i;
+					expr[count_expr].type = 1;
+					count_expr++;
+				  }
+				  else {
+					$$ = count_expr;
+					expr[count_expr].d = expr[$1].d - expr[$3].d;
+					expr[count_expr].type = 1;
+					count_expr++;
+				  }
+				}
+		|	expr '*' expr
+				{ if(expr[$1].type == 0 && expr[$3].type == 0) {
+					$$ = count_expr;
+					expr[count_expr].i = expr[$1].i * expr[$3].i;
+					expr[count_expr].type = 0;
+					count_expr++;
+				  }
+				  else if(expr[$1].type == 0 && expr[$3].type == 1) {
+					$$ = count_expr;
+					expr[count_expr].d = expr[$1].i * expr[$3].d;
+					expr[count_expr].type = 1;
+					count_expr++;
+				  }
+				  else if(expr[$1].type == 1 && expr[$3].type == 0) {
+					$$ = count_expr;
+					expr[count_expr].d = expr[$1].d * expr[$3].i;
+					expr[count_expr].type = 1;
+					count_expr++;
+				  }
+				  else {
+					$$ = count_expr;
+					expr[count_expr].d = expr[$1].d * expr[$3].d;
+					expr[count_expr].type = 1;
+					count_expr++;
+				  }
+				}
+		|	expr '/' expr
+				{ if(expr[$1].type == 0 && expr[$3].type == 0) {
+					$$ = count_expr;
+					expr[count_expr].i = expr[$1].i / expr[$3].i;
+					expr[count_expr].type = 0;
+					count_expr++;
+				  }
+				  else if(expr[$1].type == 0 && expr[$3].type == 1) {
+					$$ = count_expr;
+					expr[count_expr].d = expr[$1].i / expr[$3].d;
+					expr[count_expr].type = 1;
+					count_expr++;
+				  }
+				  else if(expr[$1].type == 1 && expr[$3].type == 0) {
+					$$ = count_expr;
+					expr[count_expr].d = expr[$1].d / expr[$3].i;
+					expr[count_expr].type = 1;
+					count_expr++;
+				  }
+				  else {
+					$$ = count_expr;
+					expr[count_expr].d = expr[$1].d / expr[$3].d;
+					expr[count_expr].type = 1;
+					count_expr++;
+				  }
+				}
+		|	expr POTENCIA expr
+				{ if(expr[$1].type == 0 && expr[$3].type == 0) {
+					$$ = count_expr;
+					expr[count_expr].i = pow(expr[$1].i, expr[$3].i);
+					expr[count_expr].type = 0;
+					count_expr++;
+				  }
+				  else if(expr[$1].type == 0 && expr[$3].type == 1) {
+					$$ = count_expr;
+					expr[count_expr].d = pow(expr[$1].i, expr[$3].d);
+					expr[count_expr].type = 1;
+					count_expr++;
+				  }
+				  else if(expr[$1].type == 1 && expr[$3].type == 0) {
+					$$ = count_expr;
+					expr[count_expr].d = pow(expr[$1].d, expr[$3].i);
+					expr[count_expr].type = 1;
+					count_expr++;
+				  }
+				  else {
+					$$ = count_expr;
+					expr[count_expr].d = pow(expr[$1].d, expr[$3].d);
+					expr[count_expr].type = 1;
+					count_expr++;
+				  }
+				}
+		|	expr '%' expr
+				{ if (expr[$1].type == 0 && expr[$3].type == 0) {
+					$$ = count_expr;
+					expr[count_expr].i = expr[$1].i % expr[$3].i;
+					expr[count_expr].type = 0;
+					count_expr++;
+				  }
+				  else {
+					yyerror("error: invalid operands to binary %");
+					exit(1);
+				  }
+				}
+		|	expr '^' expr
+				{ if (expr[$1].type == 0 && expr[$3].type == 0) {
+					$$ = count_expr;
+					expr[count_expr].i = pow(expr[$1].i, expr[$3].i);
+					expr[count_expr].type = 0;
+					count_expr++;
+				  }
+				  else {
+					yyerror("error: invalid operands to binary ^");
+					exit(1);
+				  }
+				} 
+		|	expr '|' expr 
+				{ if (expr[$1].type == 0 && expr[$3].type == 0) {
+					$$ = count_expr;
+					expr[count_expr].i = expr[$1].i | expr[$3].i;
+					expr[count_expr].type = 0;
+					count_expr++;
+				  }
+				  else {
+					yyerror("error: invalid operands to binary |");
+					//exit(1);
+				  }
+				}
+		|	expr '&' expr
+				{ if (expr[$1].type == 0 && expr[$3].type == 0) {
+					$$ = count_expr;
+					expr[count_expr].i = expr[$1].i & expr[$3].i;
+					expr[count_expr].type = 0;
+					count_expr++;
+				  }
+				  else {
+					yyerror("error: invalid operands to binary &");
+					exit(1);
+				  }
+				}
+		|	expr BSRIGHT expr
+				{ if (expr[$1].type == 0 && expr[$3].type == 0) {
+					$$ = count_expr;
+					expr[count_expr].i = expr[$1].i >> expr[$3].i;
+					expr[count_expr].type = 0;
+					count_expr++;
+				  }
+				  else {
+					yyerror("error: invalid operands to binary >>");
+					exit(1);
+				  }
+				}
+		|	expr BSLEFT expr
+				{ if (expr[$1].type == 0 && expr[$3].type == 0) {
+					$$ = count_expr;
+					expr[count_expr].i = expr[$1].i << expr[$3].i;
+					expr[count_expr].type = 0;
+					count_expr++;
+				  }
+				  else {
+					yyerror("error: invalid operands to binary <<");
+					exit(1);
+				  }
+				}
+		|	'~' expr
+				{ if (expr[$2].type == 0) {
+					$$ = count_expr;
+					expr[count_expr].i = ~expr[$2].i;
+					expr[count_expr].type = 0;
+					count_expr++;
+				  }
+				  else {
+					yyerror("error: invalid operand to binary ~");
+					exit(1);
+				  }
+				}
+		|	'-' expr %prec UMINUS
+				{ if (expr[$2].type == 0) {
+					$$ = count_expr;
+					expr[count_expr].i = -expr[$2].i;
+					expr[count_expr].type = 0;
+					count_expr++;
+				  }
+				  else {
+					$$ = count_expr;
+					expr[count_expr].d = -expr[$2].d;
+					expr[count_expr].type = 1;
+					count_expr++;
+				  }
+				}
+		|	'(' expr ')'
 				{ $$ = ($2); }
 		|	INTEIRO
-				{ $$ = $1; }
-		|	var
-				{ $$ = (int) $1; }
-		;
-
-real:		real '+' real
-				{ $$ = $1 + $3; }
-		|	real '-' real
-				{ $$ = $1 - $3; }
-		|	real '*' real
-				{ $$ = $1 * $3; }
-		|	real '/' real
-				{ $$ = $1 / $3; }
-		|	real POTENCIA real
-				{ $$ = pow($1, $3); }
-		|	real '+' int
-				{ $$ = $1 + $3; }
-		|	real '-' int
-				{ $$ = $1 - $3; }
-		|	real '*' int
-				{ $$ = $1 * $3; }
-		|	real '/' int
-				{ $$ = $1 / $3; }
-		|	real POTENCIA int
-				{ $$ = pow($1, $3); }
-		|	int '+' real
-				{ $$ = $1 + $3; }
-		|	int '-' real
-				{ $$ = $1 - $3; }
-		|	int '*' real
-				{ $$ = $1 * $3; }
-		|	int '/' real
-				{ $$ = $1 / $3; }
-		|	int POTENCIA real
-				{ $$ = pow($1, $3); }
-		|	'-' real %prec '~'
-				{ $$ = -$2; }
-		|	'(' real ')'
-				{ $$ = ($2); }
+				{ $$ = count_expr;
+				  expr[count_expr].i = $1;
+				  expr[count_expr].type = 0;
+				  count_expr++;
+				}
 		|	REAL
-				{ $$ = $1; }
-		|	var
-				{ $$ = $1; }
+				{ $$ = count_expr;
+				  expr[count_expr].d = $1;
+				  expr[count_expr].type = 1;
+				  count_expr++;
+				}
+		|	var_id
+				{ if(regvar[$1].type == 0) {
+					$$ = count_expr;
+					expr[count_expr].i = regvar[$1].i;
+					expr[count_expr].type = 0;
+					count_expr++;
+				  }
+				  else {
+					$$ = count_expr;
+					expr[count_expr].d = regvar[$1].d;
+					expr[count_expr].type = 1;
+					count_expr++;
+				  }
+				}
 		;
 
 %%
