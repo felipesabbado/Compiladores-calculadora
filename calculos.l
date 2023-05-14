@@ -14,7 +14,7 @@
 [-]{2}					{yylval.s=strdup(yytext); return DECREMENTO;}
 "(int)"					return CASTINT;
 [A-Za-z][A-Za-z0-9]*	{yylval.s=strdup(yytext); return VARIAVEL;}
-[0-9]+					{yylval.i=atoi(yytext); return INTEIRO;}
-[0-9]+\.[0-9]+			{yylval.d=atof(yytext); return REAL;}
+[0-9]+					{yylval.final_value.value.i=atoi(yytext); return INTEIRO;}
+[0-9]+\.[0-9]+			{yylval.final_value.value.d=atof(yytext); return REAL;}
 
 \n						return yytext[0];

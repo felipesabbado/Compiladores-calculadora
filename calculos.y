@@ -1,33 +1,35 @@
-%token	<i>	INTEIRO
-%token	<d>	REAL
+%token	<final_value> INTEIRO REAL
 %token	<s> POTENCIA
 %token	<s> BSLEFT BSRIGHT
 %token	<s> INCREMENTO DECREMENTO
 %token	<s> CASTINT
-%token	<s>	VARIAVEL
+%token 	<s>	VARIAVEL
 
-%type	<i> int var_id
-%type	<d>	expr real var
+%type	<final_value>  program exp term
 
 %{
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
+#include <ctype.h>
 
-typedef struct var {
+
+typedef struct number {
 	int id;
-	int type;
+	char type;
 	char name[20];
-	double value;
+	union {
+		int i;
+		double d;
+	} value;
 } NUMBER;
 
-NUMBER regvar[128];
-int count = 0;
+char INT_TYPE = 1;
+char FLOAT_TYPE = 2;
 %}
 
 %union {
-	int i;
-	double d;
+	NUMBER final_value;
 	char *s;
 }
 
@@ -44,141 +46,74 @@ int count = 0;
 
 %%
 
-expr:	
-				{ $$ = 0; }
-		|	expr int '\n'
-				{ $$ = 0; printf("Resultado: %d\n", $2); }
-		|	expr real '\n'
-				{ $$ = 0; printf("Resultado: %f\n", $2); }
-		|	expr CASTINT real '\n'
-				{ $$ = 0; printf("Resultado: %d\n", (int) $3); }
-		| 	expr VARIAVEL '=' int '\n'
-				{ $$ = 0;
-					strcpy(regvar[count].name, $2);
-					regvar[count].value = $4;
-					regvar[count].type = 0;
-					regvar[count].id = count;
-					printf("\t%d\n", (int) regvar[count].value);
-					count++;
-				}
-		|	expr VARIAVEL '=' real '\n'
-				{ $$ = 0;
-					strcpy(regvar[count].name, $2);
-					regvar[count].value = $4;
-					regvar[count].type = 1;
-					regvar[count].id = count;
-					printf("\t%f\n", regvar[count].value);
-					count++;
-				}
-		|	expr VARIAVEL '\n'
-				{ for(int i = 0; i < count; i++) {
-					if(strcmp(regvar[i].name, $2) == 0) {
-						printf("Name: %s\n", regvar[i].name);
-						if(regvar[i].type == 0) {
-							printf("%d\n", (int) regvar[i].value);
-						}
-						else {
-							printf("%f\n", regvar[i].value);
-						}
-						break;
-					}
-				  }
-				}
-		;
-		
-var_id:		VARIAVEL
-			{ for(int i = 0; i < count; i++) {
-				if(strcmp(regvar[i].name, $1) == 0) {
-					$$ = regvar[i].id;
-					break;
-				}
-			  }
-			}
+program : exp { 
+	if ($1.type == INT_TYPE)
+		printf("%d\n", $1.value.i);
+	else if ($1.type == FLOAT_TYPE)
+		printf("%f\n", $1.value.d);
+	else
+		printf("error\n");
+ }
 		;
 
-var:		var_id
-				{ $$ = regvar[$1].value; }
-		;
-
-int:		int '|' int
-				{ $$ = $1 | $3; }
-		|	int '^' int
-				{ $$ = $1 ^ $3; }
-		|	int '&' int
-				{ $$ = $1 & $3; }
-		|	int BSLEFT int
-				{ $$ = $1 << $3; }
-		|	int BSRIGHT int
-				{ $$ = $1 >> $3; }
-		|	'~' int
-				{ $$ = ~$2; }
-		|	int '+' int
-				{ $$ = $1 + $3; }
-		|	int '-' int
-				{ $$ = $1 - $3; }
-		|	int '*' int
-				{ $$ = $1 * $3; }
-		|	int '/' int
-				{ $$ = $1 / $3; }
-		|	int '%' int
-				{ $$ = $1 % $3; }
-		|	'-' int %prec '~'
-				{ $$ = -$2; }
-		|	int INCREMENTO
-				{ $$ = $1 + 1; }
-		|	int DECREMENTO
-				{ $$ = $1 - 1; }
-		|	int POTENCIA int
-				{ $$ = pow($1, $3); }
-		|	'(' int ')'
-				{ $$ = ($2); }
-		|	INTEIRO
-				{ $$ = $1; }
-		|	var
-				{ $$ = (int) $1; }
-		;
-
-real:		real '+' real
-				{ $$ = $1 + $3; }
-		|	real '-' real
-				{ $$ = $1 - $3; }
-		|	real '*' real
-				{ $$ = $1 * $3; }
-		|	real '/' real
-				{ $$ = $1 / $3; }
-		|	real POTENCIA real
-				{ $$ = pow($1, $3); }
-		|	real '+' int
-				{ $$ = $1 + $3; }
-		|	real '-' int
-				{ $$ = $1 - $3; }
-		|	real '*' int
-				{ $$ = $1 * $3; }
-		|	real '/' int
-				{ $$ = $1 / $3; }
-		|	real POTENCIA int
-				{ $$ = pow($1, $3); }
-		|	int '+' real
-				{ $$ = $1 + $3; }
-		|	int '-' real
-				{ $$ = $1 - $3; }
-		|	int '*' real
-				{ $$ = $1 * $3; }
-		|	int '/' real
-				{ $$ = $1 / $3; }
-		|	int POTENCIA real
-				{ $$ = pow($1, $3); }
-		|	'-' real %prec '~'
-				{ $$ = -$2; }
-		|	'(' real ')'
-				{ $$ = ($2); }
-		|	REAL
-				{ $$ = $1; }
-		|	var
-				{ $$ = $1; }
-		;
+exp : exp '+' term {
+	if ($1.type == INT_TYPE && $3.type == INT_TYPE)
+   {
+      $$.type = INT_TYPE;
+      $$.value.i = $1.value.i + $3.value.i;
+   }
+   else if ($1.type == INT_TYPE && $3.type == FLOAT_TYPE)
+   {
+      // this is a sort of implicit conversion to float
+      $$.type = FLOAT_TYPE; 
+      $$.value.d = $1.value.i + $3.value.d;
+   }
+   else if ($1.type == FLOAT_TYPE && $3.type == INT_TYPE)
+   {
+	  // this is a sort of implicit conversion to float
+	  $$.type = FLOAT_TYPE; 
+	  $$.value.d = $1.value.d + $3.value.i;
+   }
+   else if ($1.type == FLOAT_TYPE && $3.type == FLOAT_TYPE)
+   {
+	  $$.type = FLOAT_TYPE;
+	  $$.value.d = $1.value.d + $3.value.d;
+   }
+   else
+   {
+	  // error
+   };
+}
 
 %%
 
-extern int yylex();
+extern int yylex()
+{
+   int c;
+   while( (c=getchar()) == ' ');
+   if( isdigit(c) )
+   {
+      ungetc(c, stdin);
+      float f1;
+      scanf("%f", &f1);
+      int i1 = (int) f1;
+      if(f1 == 0){
+     	yylval.final_value.type = INT_TYPE;
+     	yylval.final_value.value.i = 0;
+	 }
+      else if( (((float) i1) / f1 ) == 1)
+      {
+		yylval.final_value.value.i = i1;
+		return INTEIRO;
+      }
+      else{
+		yylval.final_value.value.d = f1;
+		return REAL;
+      }
+      //scanf("%f",&yylval.final_value.value.d);
+      //return(NUMBER);
+   }
+   if(c == '\n') return 0;
+   return c;
+}
 extern int yyerror(char *s);
