@@ -1,29 +1,20 @@
-%token	<i>	INTEIRO
-%token	<d>	REAL
-%token	<s> POTENCIA
-%token	<s> BSLEFT BSRIGHT
-%token	<s> INCREMENTO DECREMENTO
-%token	<s> CASTINT
-%token	<s>	VARIAVEL
-
-%type	<i> var_id inicio
-%type	<n> expr
-
 %{
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
 
 struct var {
-	int id;
-	int type;
-	char name[20];
-	union {
-		int i;
-		double d;
+		int id;
+		int type;
+		char name[20];
+		union {
+			int i;
+			double d;
+		};
 	};
-};
 
+struct var expr[256];
+int count_expr = 0;
 struct var regvar[128];
 int count = 0;
 %}
@@ -32,8 +23,17 @@ int count = 0;
 	int i;
 	double d;
 	char *s;
-	struct var n;
 }
+
+%token	<i>	INTEIRO
+%token	<d>	REAL
+%token	<s> POTENCIA
+%token	<s> BSLEFT BSRIGHT
+%token	<s> INCREMENTO DECREMENTO
+%token	<s> CASTINT
+%token	<s>	VARIAVEL
+
+%type	<i> var_id inicio expr
 
 %right	'='
 %left	'|'
@@ -52,20 +52,20 @@ inicio:
 				{ $$ = 0; }
 		|	inicio expr '\n'
 				{ $$ = 0;
-				  if($2.type == 0) {
-					printf("Resultado: %d\n", $2.i);
+				  if(expr[$2].type == 0) {
+					printf("Resultado: %d\n", expr[$2].i);
 				  }
 				  else {
-					printf("Resultado: %f\n", $2.d);
+					printf("Resultado: %f\n", expr[$2].d);
 				  }
 				}
 		|	inicio CASTINT expr '\n'
 				{ $$ = 0;
-				  if($3.type == 0) {
-					printf("Resultado: %d\n", $3.i);
+				  if(expr[$3].type == 0) {
+					printf("Resultado: %d\n", expr[$3].i);
 				  }
 				  else {
-					printf("Resultado: %d\n", (int) $3.d);
+					printf("Resultado: %d\n", (int) expr[$3].d);
 				  }
 				}
 		| 	inicio VARIAVEL '=' INTEIRO '\n'
@@ -108,43 +108,62 @@ var_id:		VARIAVEL
 					$$ = regvar[i].id;
 					break;
 				}
-				else {
-					yyerror("A variável non ecziste!");
-				}
 			  }
 			}
 		;
 		
 expr:		expr '+' expr
-				{ if($1.type == 0 && $3.type == 0) {
-					$$.type = 0;
-					$$.i = $1.i + $3.i;
+				{ if(expr[$1].type == 0 && expr[$3].type == 0) {
+					$$ = count_expr;
+					expr[count_expr].i = expr[$1].i + expr[$3].i;
+					expr[count_expr].type = 0;
+					count_expr++;
 				  }
-				  else if($1.type == 0 && $3.type == 1) {
-					$$.type = 1;
-					$$.d = $1.i + $3.d;
+				  else if(expr[$1].type == 0 && expr[$3].type == 1) {
+					$$ = count_expr;
+					expr[count_expr].d = expr[$1].i + expr[$3].d;
+					expr[count_expr].type = 1;
+					count_expr++;
 				  }
-				  else if($1.type == 1 && $3.type == 0) {
-					$$.type = 1;
-					$$.d = $1.d + $3.i;
+				  else if(expr[$1].type == 1 && expr[$3].type == 0) {
+					$$ = count_expr;
+					expr[count_expr].d = expr[$1].d + expr[$3].i;
+					expr[count_expr].type = 1;
+					count_expr++;
 				  }
 				  else {
-					$$.type = 1;
-					$$.d = $1.d + $3.d;
+					$$ = count_expr;
+					expr[count_expr].d = expr[$1].d + expr[$3].d;
+					expr[count_expr].type = 1;
+					count_expr++;
 				  }
 				}
 		|	INTEIRO
-				{ $$.i = $1; $$.type = 0; }
+				{ $$ = count_expr;
+				  expr[count_expr].i = $1;
+				  expr[count_expr].type = 0;
+				  count_expr++;
+				}
 		|	REAL
-				{ $$.d = $1; $$.type = 1; }
+				{ $$ = count_expr;
+				  expr[count_expr].d = $1;
+				  expr[count_expr].type = 1;
+				  count_expr++;
+				}
 		|	var_id
 				{ if(regvar[$1].type == 0) {
-					$$.i = regvar[$1].i;
-					$$.type = 0;
+					$$ = count_expr;
+					expr[count_expr].id = count_expr;
+					expr[count_expr].i = regvar[$1].i;
+					expr[count_expr].type = 0;
+					count_expr++;
 				  }
 				  else {
-					$$.d = regvar[$1].d;
-					$$.type = 1;
+					$$ = count_expr;
+					expr[count_expr].id = count_expr;
+					expr[count_expr].d = regvar[$1].d;
+					expr[count_expr].type = 1;
+					count_expr++;
 				  }
 				}
 		;
