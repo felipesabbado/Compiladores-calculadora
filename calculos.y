@@ -32,8 +32,10 @@ int count = 0;
 %token	<s> CASTINT
 %token	<s>	VARIAVEL
 %token	<s>	CLEAR CLEARINT CLEARREAL LIST LISTINT LISTREAL
+%token	<s>	ESPACO
 
 %type	<i> var_id inicio expr
+%type	<s> lines
 
 %right	'=' 
 %left	'|' 
@@ -192,8 +194,18 @@ inicio:
 					}
 				  }
 				}
+		|	inicio lines '\n'
+				{ $$ = 0; 
+				printf("ESPACO\n");
+				}
 		;			
 		
+
+lines:		/* empty */
+			{ $$ = 0; }
+		|	ESPACO
+			{ $$ = 0; }
+		;
 var_id:		VARIAVEL
 			{ for(int i = 0; i < count; i++) {
 				if(strcmp(regvar[i].name, $1) == 0) {
