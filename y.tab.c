@@ -529,7 +529,7 @@ static YYINT  *yylexp = 0;
 
 static YYINT  *yylexemes = 0;
 #endif /* YYBTYACC */
-#line 481 "calculos.y"
+#line 502 "calculos.y"
 
 
 extern int yylex();
@@ -1241,8 +1241,29 @@ case 4:
 				  int existe = 0;
 				  for(int i = 0; i < count; i++) {
 					if(strcmp(regvar[i].name, yystack.l_mark[-3].s) == 0) {
-						/*regvar[i].type == 0 ? regvar[i].i = $4 : regvar[i].d = $4;*/
-						printf("A variável já existe!");
+						if(expr[yystack.l_mark[-1].i].type == regvar[i].type) {
+							if(expr[yystack.l_mark[-1].i].type == 0) {
+								regvar[i].i = expr[yystack.l_mark[-1].i].i;
+								printf("\tnew int: %d\n", regvar[i].i);
+							}
+							else {
+								regvar[i].d = expr[yystack.l_mark[-1].i].d;
+								printf("\tnew double: %f\n", regvar[i].d);
+							}
+						}
+						else {
+							if(expr[yystack.l_mark[-1].i].type == 1) {
+								regvar[i].type = 1;
+								regvar[i].d = expr[yystack.l_mark[-1].i].d;
+								printf("\tnew double: %f\n", regvar[i].d);
+							}
+							else {
+								regvar[i].type = 0;
+								regvar[i].i = expr[yystack.l_mark[-1].i].i;
+								printf("\tnew int: %d\n", regvar[i].i);
+							}
+						}
+						/*printf("A variável já existe!\n");*/
 						existe = 1;
 						break;
 					}
@@ -1266,10 +1287,10 @@ case 4:
 
 				  count_expr = 0;
 				}
-#line 1270 "y.tab.c"
+#line 1291 "y.tab.c"
 break;
 case 5:
-#line 104 "calculos.y"
+#line 125 "calculos.y"
 	{ for(int i = 0; i < count; i++) {
 					if(strcmp(regvar[i].name, yystack.l_mark[-1].s) == 0) {
 						printf("id %d - Nome: %s | ", i, regvar[i].name);
@@ -1283,10 +1304,10 @@ case 5:
 					}
 				  }
 				}
-#line 1287 "y.tab.c"
+#line 1308 "y.tab.c"
 break;
 case 6:
-#line 118 "calculos.y"
+#line 139 "calculos.y"
 	{ for(int i = 0; i < count; i++) {
 					if(strcmp(regvar[i].name, yystack.l_mark[-1].s) == 0) {
 						if(regvar[i].type == 0) {
@@ -1301,10 +1322,10 @@ case 6:
 					}
 				  }
 				}
-#line 1305 "y.tab.c"
+#line 1326 "y.tab.c"
 break;
 case 7:
-#line 133 "calculos.y"
+#line 154 "calculos.y"
 	{ for(int i = 0; i < count; i++) {
 					if(strcmp(regvar[i].name, yystack.l_mark[-1].s) == 0) {
 						if(regvar[i].type == 0) {
@@ -1319,22 +1340,22 @@ case 7:
 					}
 				  }
 				}
-#line 1323 "y.tab.c"
+#line 1344 "y.tab.c"
 break;
 case 8:
-#line 148 "calculos.y"
+#line 169 "calculos.y"
 	{ yyval.i = 0; count = 0; }
-#line 1328 "y.tab.c"
+#line 1349 "y.tab.c"
 break;
 case 9:
-#line 150 "calculos.y"
+#line 171 "calculos.y"
 	{ yyval.i = 0; count--;
 				  memmove(&regvar[yystack.l_mark[-1].i], &regvar[yystack.l_mark[-1].i + 1], (count - yystack.l_mark[-1].i) * sizeof(struct var));
 				}
-#line 1335 "y.tab.c"
+#line 1356 "y.tab.c"
 break;
 case 10:
-#line 154 "calculos.y"
+#line 175 "calculos.y"
 	{ yyval.i = 0;
 				  for(int i = 0; i < count; i++) {
 					if(regvar[i].type == 0) {
@@ -1344,10 +1365,10 @@ case 10:
 					}
 				  }
 				}
-#line 1348 "y.tab.c"
+#line 1369 "y.tab.c"
 break;
 case 11:
-#line 164 "calculos.y"
+#line 185 "calculos.y"
 	{ yyval.i = 0;
 				  for(int i = 0; i < count; i++) {
 					if(regvar[i].type == 1) {
@@ -1357,10 +1378,10 @@ case 11:
 					}
 				  }
 				}
-#line 1361 "y.tab.c"
+#line 1382 "y.tab.c"
 break;
 case 12:
-#line 174 "calculos.y"
+#line 195 "calculos.y"
 	{ yyval.i = 0;
 				  for(int i = 0; i < count; i++) {
 					printf("id %d - Nome: %s | ", i, regvar[i].name);
@@ -1372,10 +1393,10 @@ case 12:
 					}
 				  }
 				}
-#line 1376 "y.tab.c"
+#line 1397 "y.tab.c"
 break;
 case 13:
-#line 186 "calculos.y"
+#line 207 "calculos.y"
 	{ yyval.i = 0;
 				  printf("id %d - Nome: %s | ", yystack.l_mark[-1].i, regvar[yystack.l_mark[-1].i].name);
 					if(regvar[yystack.l_mark[-1].i].type == 0) {
@@ -1385,10 +1406,10 @@ case 13:
 						printf("Tipo: REAL | Valor: %f\n", regvar[yystack.l_mark[-1].i].d);
 					}
 				}
-#line 1389 "y.tab.c"
+#line 1410 "y.tab.c"
 break;
 case 14:
-#line 196 "calculos.y"
+#line 217 "calculos.y"
 	{ yyval.i = 0;
 				  for(int i = 0; i < count; i++) {
 					if(regvar[i].type == 0) {
@@ -1396,10 +1417,10 @@ case 14:
 					}
 				  }
 				}
-#line 1400 "y.tab.c"
+#line 1421 "y.tab.c"
 break;
 case 15:
-#line 204 "calculos.y"
+#line 225 "calculos.y"
 	{ yyval.i = 0;
 				  for(int i = 0; i < count; i++) {
 					if(regvar[i].type == 1) {
@@ -1407,10 +1428,10 @@ case 15:
 					}
 				  }
 				}
-#line 1411 "y.tab.c"
+#line 1432 "y.tab.c"
 break;
 case 16:
-#line 214 "calculos.y"
+#line 235 "calculos.y"
 	{ for(int i = 0; i < count; i++) {
 				if(strcmp(regvar[i].name, yystack.l_mark[0].s) == 0) {
 					yyval.i = i;
@@ -1418,10 +1439,10 @@ case 16:
 				}
 			  }
 			}
-#line 1422 "y.tab.c"
+#line 1443 "y.tab.c"
 break;
 case 17:
-#line 224 "calculos.y"
+#line 245 "calculos.y"
 	{ if(expr[yystack.l_mark[-2].i].type == 0 && expr[yystack.l_mark[0].i].type == 0) {
 					yyval.i = count_expr;
 					expr[count_expr].i = expr[yystack.l_mark[-2].i].i + expr[yystack.l_mark[0].i].i;
@@ -1447,10 +1468,10 @@ case 17:
 					count_expr++;
 				  }
 				}
-#line 1451 "y.tab.c"
+#line 1472 "y.tab.c"
 break;
 case 18:
-#line 250 "calculos.y"
+#line 271 "calculos.y"
 	{ if(expr[yystack.l_mark[-2].i].type == 0 && expr[yystack.l_mark[0].i].type == 0) {
 					yyval.i = count_expr;
 					expr[count_expr].i = expr[yystack.l_mark[-2].i].i - expr[yystack.l_mark[0].i].i;
@@ -1476,10 +1497,10 @@ case 18:
 					count_expr++;
 				  }
 				}
-#line 1480 "y.tab.c"
+#line 1501 "y.tab.c"
 break;
 case 19:
-#line 276 "calculos.y"
+#line 297 "calculos.y"
 	{ if(expr[yystack.l_mark[-2].i].type == 0 && expr[yystack.l_mark[0].i].type == 0) {
 					yyval.i = count_expr;
 					expr[count_expr].i = expr[yystack.l_mark[-2].i].i * expr[yystack.l_mark[0].i].i;
@@ -1505,10 +1526,10 @@ case 19:
 					count_expr++;
 				  }
 				}
-#line 1509 "y.tab.c"
+#line 1530 "y.tab.c"
 break;
 case 20:
-#line 302 "calculos.y"
+#line 323 "calculos.y"
 	{ if(expr[yystack.l_mark[-2].i].type == 0 && expr[yystack.l_mark[0].i].type == 0) {
 					yyval.i = count_expr;
 					expr[count_expr].i = expr[yystack.l_mark[-2].i].i / expr[yystack.l_mark[0].i].i;
@@ -1534,10 +1555,10 @@ case 20:
 					count_expr++;
 				  }
 				}
-#line 1538 "y.tab.c"
+#line 1559 "y.tab.c"
 break;
 case 21:
-#line 328 "calculos.y"
+#line 349 "calculos.y"
 	{ if(expr[yystack.l_mark[-2].i].type == 0 && expr[yystack.l_mark[0].i].type == 0) {
 					yyval.i = count_expr;
 					expr[count_expr].i = pow(expr[yystack.l_mark[-2].i].i, expr[yystack.l_mark[0].i].i);
@@ -1563,10 +1584,10 @@ case 21:
 					count_expr++;
 				  }
 				}
-#line 1567 "y.tab.c"
+#line 1588 "y.tab.c"
 break;
 case 22:
-#line 354 "calculos.y"
+#line 375 "calculos.y"
 	{ if (expr[yystack.l_mark[-2].i].type == 0 && expr[yystack.l_mark[0].i].type == 0) {
 					yyval.i = count_expr;
 					expr[count_expr].i = expr[yystack.l_mark[-2].i].i % expr[yystack.l_mark[0].i].i;
@@ -1578,10 +1599,10 @@ case 22:
 					exit(1);
 				  }
 				}
-#line 1582 "y.tab.c"
+#line 1603 "y.tab.c"
 break;
 case 23:
-#line 366 "calculos.y"
+#line 387 "calculos.y"
 	{ if (expr[yystack.l_mark[-2].i].type == 0 && expr[yystack.l_mark[0].i].type == 0) {
 					yyval.i = count_expr;
 					expr[count_expr].i = pow(expr[yystack.l_mark[-2].i].i, expr[yystack.l_mark[0].i].i);
@@ -1593,10 +1614,10 @@ case 23:
 					exit(1);
 				  }
 				}
-#line 1597 "y.tab.c"
+#line 1618 "y.tab.c"
 break;
 case 24:
-#line 378 "calculos.y"
+#line 399 "calculos.y"
 	{ if (expr[yystack.l_mark[-2].i].type == 0 && expr[yystack.l_mark[0].i].type == 0) {
 					yyval.i = count_expr;
 					expr[count_expr].i = expr[yystack.l_mark[-2].i].i | expr[yystack.l_mark[0].i].i;
@@ -1608,10 +1629,10 @@ case 24:
 					/*exit(1);*/
 				  }
 				}
-#line 1612 "y.tab.c"
+#line 1633 "y.tab.c"
 break;
 case 25:
-#line 390 "calculos.y"
+#line 411 "calculos.y"
 	{ if (expr[yystack.l_mark[-2].i].type == 0 && expr[yystack.l_mark[0].i].type == 0) {
 					yyval.i = count_expr;
 					expr[count_expr].i = expr[yystack.l_mark[-2].i].i & expr[yystack.l_mark[0].i].i;
@@ -1623,10 +1644,10 @@ case 25:
 					exit(1);
 				  }
 				}
-#line 1627 "y.tab.c"
+#line 1648 "y.tab.c"
 break;
 case 26:
-#line 402 "calculos.y"
+#line 423 "calculos.y"
 	{ if (expr[yystack.l_mark[-2].i].type == 0 && expr[yystack.l_mark[0].i].type == 0) {
 					yyval.i = count_expr;
 					expr[count_expr].i = expr[yystack.l_mark[-2].i].i >> expr[yystack.l_mark[0].i].i;
@@ -1638,10 +1659,10 @@ case 26:
 					exit(1);
 				  }
 				}
-#line 1642 "y.tab.c"
+#line 1663 "y.tab.c"
 break;
 case 27:
-#line 414 "calculos.y"
+#line 435 "calculos.y"
 	{ if (expr[yystack.l_mark[-2].i].type == 0 && expr[yystack.l_mark[0].i].type == 0) {
 					yyval.i = count_expr;
 					expr[count_expr].i = expr[yystack.l_mark[-2].i].i << expr[yystack.l_mark[0].i].i;
@@ -1653,10 +1674,10 @@ case 27:
 					exit(1);
 				  }
 				}
-#line 1657 "y.tab.c"
+#line 1678 "y.tab.c"
 break;
 case 28:
-#line 426 "calculos.y"
+#line 447 "calculos.y"
 	{ if (expr[yystack.l_mark[0].i].type == 0) {
 					yyval.i = count_expr;
 					expr[count_expr].i = ~expr[yystack.l_mark[0].i].i;
@@ -1668,10 +1689,10 @@ case 28:
 					exit(1);
 				  }
 				}
-#line 1672 "y.tab.c"
+#line 1693 "y.tab.c"
 break;
 case 29:
-#line 438 "calculos.y"
+#line 459 "calculos.y"
 	{ if (expr[yystack.l_mark[0].i].type == 0) {
 					yyval.i = count_expr;
 					expr[count_expr].i = -expr[yystack.l_mark[0].i].i;
@@ -1685,33 +1706,33 @@ case 29:
 					count_expr++;
 				  }
 				}
-#line 1689 "y.tab.c"
+#line 1710 "y.tab.c"
 break;
 case 30:
-#line 452 "calculos.y"
+#line 473 "calculos.y"
 	{ yyval.i = (yystack.l_mark[-1].i); }
-#line 1694 "y.tab.c"
+#line 1715 "y.tab.c"
 break;
 case 31:
-#line 454 "calculos.y"
+#line 475 "calculos.y"
 	{ yyval.i = count_expr;
 				  expr[count_expr].i = yystack.l_mark[0].i;
 				  expr[count_expr].type = 0;
 				  count_expr++;
 				}
-#line 1703 "y.tab.c"
+#line 1724 "y.tab.c"
 break;
 case 32:
-#line 460 "calculos.y"
+#line 481 "calculos.y"
 	{ yyval.i = count_expr;
 				  expr[count_expr].d = yystack.l_mark[0].d;
 				  expr[count_expr].type = 1;
 				  count_expr++;
 				}
-#line 1712 "y.tab.c"
+#line 1733 "y.tab.c"
 break;
 case 33:
-#line 466 "calculos.y"
+#line 487 "calculos.y"
 	{ if(regvar[yystack.l_mark[0].i].type == 0) {
 					yyval.i = count_expr;
 					expr[count_expr].i = regvar[yystack.l_mark[0].i].i;
@@ -1725,9 +1746,9 @@ case 33:
 					count_expr++;
 				  }
 				}
-#line 1729 "y.tab.c"
+#line 1750 "y.tab.c"
 break;
-#line 1731 "y.tab.c"
+#line 1752 "y.tab.c"
     default:
         break;
     }

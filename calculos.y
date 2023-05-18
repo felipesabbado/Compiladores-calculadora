@@ -75,8 +75,27 @@ inicio:
 				  int existe = 0;
 				  for(int i = 0; i < count; i++) {
 					if(strcmp(regvar[i].name, $2) == 0) {
-						if(regvar[i].type == 0) {
-							
+						if(expr[$4].type == regvar[i].type) {
+							if(expr[$4].type == 0) {
+								regvar[i].i = expr[$4].i;
+								printf("\tnew int: %d\n", regvar[i].i);
+							}
+							else {
+								regvar[i].d = expr[$4].d;
+								printf("\tnew double: %f\n", regvar[i].d);
+							}
+						}
+						else {
+							if(expr[$4].type == 1) {
+								regvar[i].type = 1;
+								regvar[i].d = expr[$4].d;
+								printf("\tnew double: %f\n", regvar[i].d);
+							}
+							else {
+								regvar[i].type = 0;
+								regvar[i].i = expr[$4].i;
+								printf("\tnew int: %d\n", regvar[i].i);
+							}
 						}
 						//printf("A variável já existe!\n");
 						existe = 1;
