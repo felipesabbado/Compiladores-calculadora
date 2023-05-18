@@ -13,13 +13,12 @@
 [+]{2}" "* 				    {yylval.s=strdup(yytext); return INCREMENTO;}
 [-]{2}" "* 				    {yylval.s=strdup(yytext); return DECREMENTO;}
 "(int)"" "*  			    return CASTINT;
-"@CLEAR"" "+ 			    return CLEAR;
-"@CLEAR INT"" "+		    return CLEARINT;
-"@CLEAR REAL"" "+		    return CLEARREAL;
-"@LIST"" "+				    return LIST;
-"@LIST INT"" "+			    return LISTINT;
-"@LIST REAL"" "+			return LISTREAL;
-[ ]+                        return ESPACO;
+"@CLEAR"" "* 			    return CLEAR;
+"@CLEAR INT"" "*		    return CLEARINT;
+"@CLEAR REAL"" "*		    return CLEARREAL;
+"@LIST"" "*				    return LIST;
+"@LIST INT"" "*			    return LISTINT;
+"@LIST REAL"" "*			return LISTREAL;
 [A-Za-z][A-Za-z0-9]*" "*    {yylval.s=strdup(yytext); return VARIAVEL;}
 [0-9]+" "* 					{yylval.i=atoi(yytext); return INTEIRO;}
 [0-9]+\.[0-9]+" "* 			{yylval.d=atof(yytext); return REAL;}

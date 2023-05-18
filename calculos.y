@@ -32,10 +32,8 @@ int count = 0;
 %token	<s> CASTINT
 %token	<s>	VARIAVEL
 %token	<s>	CLEAR CLEARINT CLEARREAL LIST LISTINT LISTREAL
-%token	<s>	ESPACO
 
 %type	<i> var_id inicio expr
-%type	<s> lines
 
 %right	'=' 
 %left	'|' 
@@ -60,6 +58,7 @@ inicio:
 				  else {
 					printf("Resultado: %f\n", expr[$2].d);
 				  }
+				  count_expr = 0;
 				}
 		|	inicio CASTINT expr '\n'
 				{ $$ = 0;
@@ -69,22 +68,39 @@ inicio:
 				  else {
 					printf("Resultado: %d\n", (int) expr[$3].d);
 				  }
+				  count_expr = 0;
 				}
 		|	inicio VARIAVEL '=' expr '\n'
 				{ $$ = 0;
-				  if(expr[$4].type == 0) {
-					strcpy(regvar[count].name, $2);
-					regvar[count].i = expr[$4].i;
-					regvar[count].type = 0;
-					printf("\t%d\n", regvar[count].i);
+				  int existe = 0;
+				  for(int i = 0; i < count; i++) {
+					if(strcmp(regvar[i].name, $2) == 0) {
+						if(regvar[i].type == 0) {
+							
+						}
+						//printf("A variável já existe!\n");
+						existe = 1;
+						break;
+					}
 				  }
-				  else {
-					strcpy(regvar[count].name, $2);
-					regvar[count].d = expr[$4].d;
-					regvar[count].type = 1;
-					printf("\t%f\n", regvar[count].d);
-				  }
-				  count++;
+				  
+				  if(!existe) {
+					if(expr[$4].type == 0) {
+						strcpy(regvar[count].name, $2);
+						regvar[count].i = expr[$4].i;
+						regvar[count].type = 0;
+						printf("\t%d\n", regvar[count].i);
+					}
+					else {
+						strcpy(regvar[count].name, $2);
+						regvar[count].d = expr[$4].d;
+						regvar[count].type = 1;
+						printf("\t%f\n", regvar[count].d);
+					  }
+					count++;
+					}
+
+				  count_expr = 0;
 				}
 		|	inicio VARIAVEL '\n'
 				{ for(int i = 0; i < count; i++) {
@@ -194,18 +210,8 @@ inicio:
 					}
 				  }
 				}
-		|	inicio lines '\n'
-				{ $$ = 0; 
-				printf("ESPACO\n");
-				}
 		;			
-		
 
-lines:		/* empty */
-			{ $$ = 0; }
-		|	ESPACO
-			{ $$ = 0; }
-		;
 var_id:		VARIAVEL
 			{ for(int i = 0; i < count; i++) {
 				if(strcmp(regvar[i].name, $1) == 0) {

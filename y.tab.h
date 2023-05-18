@@ -16,8 +16,7 @@
 #define LIST 269
 #define LISTINT 270
 #define LISTREAL 271
-#define ESPACO 272
-#define UMINUS 273
+#define UMINUS 272
 #ifdef YYSTYPE
 #undef  YYSTYPE_IS_DECLARED
 #define YYSTYPE_IS_DECLARED 1
