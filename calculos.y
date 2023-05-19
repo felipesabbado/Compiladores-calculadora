@@ -16,6 +16,8 @@ struct var expr[256];
 int count_expr = 0;
 struct var regvar[128];
 int count = 0;
+
+
 %}
 
 %union {
@@ -24,14 +26,14 @@ int count = 0;
 	char *s;
 }
 
-%token	<i>	INTEIRO
-%token	<d>	REAL
+%token	<i> INTEIRO
+%token	<d> REAL
 %token	<s> POTENCIA
 %token	<s> BSLEFT BSRIGHT
 %token	<s> INCREMENTO DECREMENTO
 %token	<s> CASTINT
-%token	<s>	VARIAVEL
-%token	<s>	CLEAR CLEARINT CLEARREAL LIST LISTINT LISTREAL
+%token	<s> VARIAVEL
+%token	<s> CLEAR CLEARINT CLEARREAL LIST LISTINT LISTREAL
 
 %type	<i> var_id inicio expr
 
@@ -74,7 +76,7 @@ inicio:
 				{ $$ = 0;
 				  int existe = 0;
 				  for(int i = 0; i < count; i++) {
-					if(strcmp(regvar[i].name, $2) == 0) {
+					if(strcmp(regvar[i].name, removeSpacesFromStr($2)) == 0) {
 						if(expr[$4].type == regvar[i].type) {
 							if(expr[$4].type == 0) {
 								regvar[i].i = expr[$4].i;
@@ -105,13 +107,13 @@ inicio:
 				  
 				  if(!existe) {
 					if(expr[$4].type == 0) {
-						strcpy(regvar[count].name, $2);
+						strcpy(regvar[count].name, removeSpacesFromStr($2));
 						regvar[count].i = expr[$4].i;
 						regvar[count].type = 0;
 						printf("\t%d\n", regvar[count].i);
 					}
 					else {
-						strcpy(regvar[count].name, $2);
+						strcpy(regvar[count].name, removeSpacesFromStr($2));
 						regvar[count].d = expr[$4].d;
 						regvar[count].type = 1;
 						printf("\t%f\n", regvar[count].d);
@@ -122,8 +124,9 @@ inicio:
 				  count_expr = 0;
 				}
 		|	inicio VARIAVEL '\n'
-				{ for(int i = 0; i < count; i++) {
-					if(strcmp(regvar[i].name, $2) == 0) {
+				{ 
+					for(int i = 0; i < count; i++) {
+					if(strcmp(regvar[i].name, removeSpacesFromStr($2)) == 0) {
 						printf("id %d - Nome: %s | ", i, regvar[i].name);
 						if(regvar[i].type == 0) {
 							printf("Tipo: INT | Valor: %d\n", regvar[i].i);
@@ -503,3 +506,4 @@ expr:		expr '+' expr
 
 extern int yylex();
 extern int yyerror(char *s);
+extern char * removeSpacesFromStr(char *string); 
