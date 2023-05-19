@@ -46,7 +46,7 @@ int count = 0;
 %left	'*' '/' '%'
 %right	'~' UMINUS
 %left	INCREMENTO DECREMENTO
-%right	POTENCIA
+%right	POTENCIA '#'
 
 %%
 
@@ -468,6 +468,21 @@ expr:		expr '+' expr
 				  else {
 					$$ = count_expr;
 					expr[count_expr].d = -expr[$2].d;
+					expr[count_expr].type = 1;
+					count_expr++;
+				  }
+				}
+		|	'#' expr
+				{
+					if (expr[$2].type == 0) {
+					$$ = count_expr;
+					expr[count_expr].d = sqrt(expr[$2].i);
+					expr[count_expr].type = 1;
+					count_expr++;
+				  }
+				  else {
+					$$ = count_expr;
+					expr[count_expr].d = sqrt(expr[$2].d);
 					expr[count_expr].type = 1;
 					count_expr++;
 				  }

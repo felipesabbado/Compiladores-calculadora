@@ -6,7 +6,7 @@
 
 %%
 
-[-+*/^~&|()%=]" "* 		    return yytext[0];
+[-+*/^~&|()%=\#]" "* 		    return yytext[0];
 [*]{2}" "* 				    {yylval.s=strdup(yytext); return POTENCIA;}
 [<]{2}" "* 				    {yylval.s=strdup(yytext); return BSLEFT;}
 [>]{2}" "* 				    {yylval.s=strdup(yytext); return BSRIGHT;}
